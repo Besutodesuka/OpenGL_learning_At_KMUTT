@@ -9,6 +9,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 float Triangle_centroid(const std::array<float, 9>& triangle, char axis); // Updated signature
 float Euclidian_distance(float x1, float y1, float x2, float y2);
+int random_int(int min, int max);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -32,6 +33,34 @@ const char *fragmentShader2Source = "#version 330 core\n"
     "{\n"
     "   FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);\n"
     "}\n\0";
+
+const char* fragmentShaderSource_Purple = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(0.937f, 0.0f, 1.0f, 1.0f);\n"
+"}\n\0";
+
+const char* fragmentShaderSource_Blue = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(0.0f, 0.06f, 1.0f, 1.0f);\n"
+"}\n\0";
+
+const char* fragmentShaderSource_LightBlue = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(0.498f, 0.8f, 1.0f, 1.0f);\n"
+"}\n\0";
+
+const char* fragmentShaderSource_Pink = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(1.0f, 0.572f, 0.96f, 1.0f);\n"
+"}\n\0";
 
 //struct Triangle {
 //    float *vertices;
@@ -57,6 +86,10 @@ std::vector<std::array<float, 9>> allTriangles = {
         {{ 0.0f, -0.5f, 0.0f,   0.9f, -0.5f, 0.0f,   0.45f, 0.5f, 0.0f}}, // Second Triangle
         {{-0.9f, 0.5f, 0.0f,  -0.1f, 0.5f, 0.0f,  -0.5f, -0.5f, 0.0f}}   // A third triangle
 };
+
+std::vector<unsigned int> fragmentShaderlist;
+std::vector<int> fragmentShadermap;
+
 
 //TODO: read more about this
 unsigned int VBO, VAO;
@@ -101,14 +134,34 @@ int main()
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     unsigned int fragmentShaderOrange = glCreateShader(GL_FRAGMENT_SHADER); // the first fragment shader that outputs the color orange
     unsigned int fragmentShaderYellow = glCreateShader(GL_FRAGMENT_SHADER); // the second fragment shader that outputs the color yellow
+    unsigned int fragmentShaderPurple = glCreateShader(GL_FRAGMENT_SHADER);
+    unsigned int fragmentShaderLightBlue = glCreateShader(GL_FRAGMENT_SHADER);
+    unsigned int fragmentShaderBlue = glCreateShader(GL_FRAGMENT_SHADER);
+    unsigned int fragmentShaderPink = glCreateShader(GL_FRAGMENT_SHADER);
+    
     unsigned int shaderProgramOrange = glCreateProgram();
     unsigned int shaderProgramYellow = glCreateProgram(); // the second shader program
+    unsigned int shaderProgramPurple = glCreateProgram();
+    unsigned int shaderProgramLightBlue = glCreateProgram();
+    unsigned int shaderProgramBlue = glCreateProgram();
+    unsigned int shaderProgramPink = glCreateProgram();
+
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
+
     glShaderSource(fragmentShaderOrange, 1, &fragmentShader1Source, NULL);
     glCompileShader(fragmentShaderOrange);
     glShaderSource(fragmentShaderYellow, 1, &fragmentShader2Source, NULL);
     glCompileShader(fragmentShaderYellow);
+    glShaderSource(fragmentShaderPurple, 1, &fragmentShaderSource_Purple, NULL);
+    glCompileShader(fragmentShaderPurple);
+    glShaderSource(fragmentShaderLightBlue, 1, &fragmentShaderSource_LightBlue, NULL);
+    glCompileShader(fragmentShaderLightBlue);
+    glShaderSource(fragmentShaderBlue, 1, &fragmentShaderSource_Blue, NULL);
+    glCompileShader(fragmentShaderBlue);
+    glShaderSource(fragmentShaderPink, 1, &fragmentShaderSource_Pink, NULL);
+    glCompileShader(fragmentShaderPink);
+
     // link the first program object
     glAttachShader(shaderProgramOrange, vertexShader);
     glAttachShader(shaderProgramOrange, fragmentShaderOrange);
@@ -119,14 +172,40 @@ int main()
     glAttachShader(shaderProgramYellow, fragmentShaderYellow);
     glLinkProgram(shaderProgramYellow);
 
+    glAttachShader(shaderProgramPurple, vertexShader);
+    glAttachShader(shaderProgramPurple, fragmentShaderPurple);
+    glLinkProgram(shaderProgramPurple);
+
+    glAttachShader(shaderProgramLightBlue, vertexShader);
+    glAttachShader(shaderProgramLightBlue, fragmentShaderLightBlue);
+    glLinkProgram(shaderProgramLightBlue);
+
+    glAttachShader(shaderProgramBlue, vertexShader);
+    glAttachShader(shaderProgramBlue, fragmentShaderBlue);
+    glLinkProgram(shaderProgramBlue);
+
+    glAttachShader(shaderProgramPink, vertexShader);
+    glAttachShader(shaderProgramPink, fragmentShaderPink);
+    glLinkProgram(shaderProgramPink);
+
+    fragmentShaderlist = {
+        shaderProgramYellow,
+        shaderProgramPink,
+        shaderProgramPurple,
+        shaderProgramLightBlue,
+        shaderProgramBlue
+    };
+
+    fragmentShadermap = {
+        0,1,2
+    };
+
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     glGenVertexArrays(1, &VAO); // we can also generate multiple VAOs or buffers at the same time
     glGenBuffers(1, &VBO);
 
     // glBindVertexArray(0); // not really necessary as well, but beware of calls that could affect VAOs while this one is bound (like binding element buffer objects, or enabling/disabling vertex attributes)
-
-
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -171,7 +250,9 @@ int main()
             }
             else {
 				// TODO: use specific shader program for each vertices
-                glUseProgram(shaderProgramYellow);
+                glUseProgram(
+					fragmentShaderlist[fragmentShadermap[i]]
+                );
             }
 
             // Draw one triangle (3 vertices), starting at the correct offset
@@ -237,6 +318,8 @@ void processInput(GLFWwindow *window)
         std::array<float, 9> newTriangle =
         { {-0.5f, -0.5f, 0.0f, -0.0f, -0.5f, 0.0f,  -0.5f,  0.0f, 0.0f}};
 		allTriangles.push_back(newTriangle);
+        int newShader = random_int(0,fragmentShaderlist.size()-1);
+		fragmentShadermap.push_back(newShader);
 		// TODO: randomly select the shader program for the new triangle and add to vector
 		std::cout << "Added new triangle. Total triangles: " << allTriangles.size() << std::endl;
 	}
@@ -280,6 +363,7 @@ void processInput(GLFWwindow *window)
     else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         if (selected_triangle_index != -1) {
             allTriangles.erase(allTriangles.begin() + selected_triangle_index);
+			fragmentShadermap.erase(fragmentShadermap.begin() + selected_triangle_index);
             selected_triangle_index = -1; // Deselect after deletion
             std::cout << "Deleted selected triangle. Total triangles: " << allTriangles.size() << std::endl;
         }
@@ -294,4 +378,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+
+int random_int(int min, int max){
+    return min + (rand() % (max - min + 1));
 }
