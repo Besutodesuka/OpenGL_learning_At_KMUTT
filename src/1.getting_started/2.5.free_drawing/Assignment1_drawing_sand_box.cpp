@@ -8,6 +8,9 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 float Triangle_centroid(const std::array<float, 9>& triangle, char axis); // Updated signature
+bool is_point_in_triangle(float px, float py, const std::array<float, 9>& triangle);
+float cross_vector_2D(float vx1, float vy1, float vx2, float vy2);
+
 float Euclidian_distance(float x1, float y1, float x2, float y2);
 int random_int(int min, int max);
 
@@ -62,29 +65,13 @@ const char* fragmentShaderSource_Pink = "#version 330 core\n"
 "   FragColor = vec4(1.0f, 0.572f, 0.96f, 1.0f);\n"
 "}\n\0";
 
-//struct Triangle {
-//    float *vertices;
-//	Triangle* next;
-//};
-
-//float firstTriangle[] = {
-//        -0.5f, -0.5f, 0.0f,  // left 
-//        -0.0f, -0.5f, 0.0f,  // right
-//        -0.5f, 0.0f, 0.0f,  // top 
-//};
-//float secondTriangle[] = {
-//    0.0f, -0.5f, 0.0f,  // left
-//    0.9f, -0.5f, 0.0f,  // right
-//    0.45f, 0.5f, 0.0f   // top 
-//};
-
 int selected_triangle_index = -1;
 bool aKeyPressedLastFrame = false;
 
 std::vector<std::array<float, 9>> allTriangles = {
-        {{-0.5f, -0.5f, 0.0f,  -0.0f, -0.5f, 0.0f,  -0.5f, 0.0f, 0.0f}}, // First Triangle
-        {{ 0.0f, -0.5f, 0.0f,   0.9f, -0.5f, 0.0f,   0.45f, 0.5f, 0.0f}}, // Second Triangle
-        {{-0.9f, 0.5f, 0.0f,  -0.1f, 0.5f, 0.0f,  -0.5f, -0.5f, 0.0f}}   // A third triangle
+        //{{-0.5f, -0.5f, 0.0f,  -0.0f, -0.5f, 0.0f,  -0.5f, 0.0f, 0.0f}}, // First Triangle
+        //{{ 0.0f, -0.5f, 0.0f,   0.9f, -0.5f, 0.0f,   0.45f, 0.5f, 0.0f}}, // Second Triangle
+        //{{-0.1f, 0.5f, 0.0f,  -0.9f, 0.5f, 0.0f,  -0.5f, -0.5f, 0.0f}}   // A third triangle
 };
 
 std::vector<unsigned int> fragmentShaderlist;
@@ -316,7 +303,7 @@ void processInput(GLFWwindow *window)
 	// to selct VAO with mouse coordinates
     else if (aIsPressedNow && !aKeyPressedLastFrame) {
         std::array<float, 9> newTriangle =
-        { {-0.5f, -0.5f, 0.0f, -0.0f, -0.5f, 0.0f,  -0.5f,  0.0f, 0.0f}};
+        { {-0.25f, 0.0f, 0.0f, -0.0f, -0.25f, 0.0f,  0.25f,  0.0f, 0.0f}};
 		allTriangles.push_back(newTriangle);
         int newShader = random_int(0,fragmentShaderlist.size()-1);
 		fragmentShadermap.push_back(newShader);
@@ -330,6 +317,9 @@ void processInput(GLFWwindow *window)
 
         for (int i = 0; i < allTriangles.size(); ++i)
         {
+            
+            
+			//the approach of using centroid to select triangle have fail case: press out side the triangle and still select it
             float centroidX = Triangle_centroid(allTriangles[i], 'x');
             float centroidY = Triangle_centroid(allTriangles[i], 'y');
             float dist = Euclidian_distance(ndcX, ndcY, centroidX, centroidY);
@@ -339,12 +329,16 @@ void processInput(GLFWwindow *window)
                 closest_index = i;
             }
         }
-        selected_triangle_index = closest_index;
+		// we can cross check the selected triangle again to fail proof
+        if (is_point_in_triangle(ndcX, ndcY, allTriangles[closest_index])) {
+            selected_triangle_index = closest_index;
+        }
+        
 		// calculate distance from mouse to triangle centroids
 		// update selected_triangle pointer
 	}
 	// to change trinagle shape with w key
-    else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
 		// loop check in 2D coordinates in firtst triangle
         float max_dist = 99999 ;
 		int max_point = -1;
@@ -382,4 +376,36 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 int random_int(int min, int max){
     return min + (rand() % (max - min + 1));
+}
+
+float cross_vector_2D(float vx1, float vy1, float vx2, float vy2) {
+    return vx1 * vy2 - vy1 * vx2;
+}
+
+bool is_point_in_triangle(float px, float py, const std::array<float, 9>& triangle) {
+    float checker = 0;
+    for (int i = 0; i < 3; ++i) {
+        // get vector on the edge of the triangle
+        float vx1 = triangle[3 * ((i + 1) % 3)] - triangle[3 * i];
+        float vy1 = triangle[3 * ((i + 1) % 3) + 1] - triangle[3 * i + 1];
+		// normalize vector of cursor to source vertex
+        float vx2 = px - triangle[3 * i];
+        float vy2 = py - triangle[3 * i + 1];
+
+		// cross product to determine if the point is on the right side of the edge
+		float product = cross_vector_2D(vx1, vy1, vx2, vy2);
+        if (checker == 0) {
+			checker = product;
+        }
+        else if ((checker < 0 && product > 0) || (checker > 0 && product < 0)) {
+            // if the cross product sign is different, the point is outside the triangle
+            return false;
+        }
+			
+		std::cout << "Cross product for edge " << i << ": " << product << std::endl;
+        //if (product < 0)
+        //    return false;
+	}
+
+	return true;
 }
