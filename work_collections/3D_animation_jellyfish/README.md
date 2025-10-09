@@ -2,6 +2,7 @@
 this is 3D Animation that wou can walk and watch them. I create library for rendering mesh (mesh.h) from input vertice, indice and normal vector for compute howlight shoul reflect. I made class in facade pattern to render all 3 mesh which are part of jellyfish all together and enable its animation.
 
 to generate vertices and indices for some mesh, I used tools below to assist me on crafting equations and visualize it in blender program first from generated python script. script are stored in **matrix_model** folder
+here is idea of how to generate vertices using matrix transformation: https://docs.google.com/presentation/d/1BeMgSF3KCHQ27npzpVizwvjUkllzFN_d06p0ER4XvSE/edit?usp=sharing
 
 # tools used for create mesh
 - to map vertice using matrix transformation
@@ -9,7 +10,8 @@ to generate vertices and indices for some mesh, I used tools below to assist me 
     - tool link: https://otvinta.com/matrix.html
 - to create fluffy crossection I use Epicycloid to create flower like surface: http://xahlee.info/SpecialPlaneCurves_dir/EpiHypocycloid_dir/epiHypocycloid.html
 
-# demo video
+# demo
+![alt text](image.png)
 [![Video Title](https://img.youtube.com/vi/2AGqep__qQY/0.jpg)](https://www.youtube.com/watch?v=2AGqep__qQY)
 
 
