@@ -340,6 +340,7 @@ void processInput(GLFWwindow *window)
 	// to change trinagle shape with w key
     else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
 		// loop check in 2D coordinates in firtst triangle
+		if (selected_triangle_index == -1) return; // No triangle selected, nothing to do
         float max_dist = 99999 ;
 		int max_point = -1;
         for (int i = 0; i < 3; i++) {
