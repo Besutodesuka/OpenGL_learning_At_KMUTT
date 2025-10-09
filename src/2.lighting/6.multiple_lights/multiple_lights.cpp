@@ -30,7 +30,7 @@ const float PI = 3.1415926535f;
 
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, -4.0f, 0.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -517,14 +517,14 @@ float vertices[] = {// this is for a cube which can be transform to make it scat
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f,  0.0f,  0.0f),
     glm::vec3(2.0f,  5.0f, -15.0f),
-    glm::vec3(-1.5f, -2.2f, -2.5f),
+    //glm::vec3(-1.5f, -2.2f, -2.5f),
     glm::vec3(-3.8f, -2.0f, -12.3f),
-    glm::vec3(2.4f, -0.4f, -3.5f),
+    //glm::vec3(2.4f, -0.4f, -3.5f),
     glm::vec3(-1.7f,  3.0f, -7.5f),
-    glm::vec3(1.3f, -2.0f, -2.5f),
-    glm::vec3(1.5f,  2.0f, -2.5f),
-    glm::vec3(1.5f,  0.2f, -1.5f),
-    glm::vec3(-1.3f,  1.0f, -1.5f)
+    //glm::vec3(1.3f, -2.0f, -2.5f),
+    //glm::vec3(1.5f,  2.0f, -2.5f),
+    //glm::vec3(1.5f,  0.2f, -1.5f),
+    //glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 // positions of the point lights
 glm::vec3 pointLightPositions[] = {
@@ -735,8 +735,9 @@ int main()
             // calculate the model matrix for each object and pass it to shader before drawing
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * i;
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            model = glm::translate(model, glm::vec3(0.0f,3.0f*sin(1.5f*lastFrame + 5*i), 0.0f));
+           /* float angle = 20.0f * i;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));*/
 
 			Jellyfish_facade.Draw(lightingShader, model);
             generateAnimatedTail(tail_vertices, tail_indices, lastFrame);
@@ -775,8 +776,8 @@ int main()
          // we now draw as many light bulbs as we have point lights.
          model = glm::mat4(1.0f);
          model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-         model = glm::scale(model, glm::vec3(50.0f)); // Make it a smaller cube
-         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.6f));
+         model = glm::scale(model, glm::vec3(10.0f)); // Make it a smaller cube
+         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
          lightingShader.setMat4("model", model);
 		 ocean_ground_mesh.Draw();
 
