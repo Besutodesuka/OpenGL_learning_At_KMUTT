@@ -6,7 +6,12 @@ this project allow you to draw art using random generated triangle
 - you can click and drag closest vertice of selected triangle to reshape it.
 - you can **press D** to delete selected triangle
 # project structure
+```
 --src
   |--1.getting_started
         |--2.5free_drawing
             |--code.cpp
+```
+# example output
+![alt text](output/drawing.png)
+![alt text](<output/drawing with terminal.png>)
