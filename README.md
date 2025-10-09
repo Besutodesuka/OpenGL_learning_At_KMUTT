@@ -5,4 +5,6 @@ thankyou for such good resource help us learning things from scartch step by ste
 
 # Repository structure
 for easier compiling code, I use same project directory and cmak configuration as learn opengl repository. some of my project are modified from the original course to create what I have in my imagination. for readability I will provide modified code in work_collection folder and place README.md file for explaination in each project. you can checkout link to those folder below.
-
+- [2D drawing sandbox](https://github.com/Besutodesuka/OpenGL_learning_At_KMUTT/tree/main/work_collections/drawing_with_triangle_engine)
+- [2D interactive art](https://github.com/Besutodesuka/OpenGL_learning_At_KMUTT/tree/main/work_collections/Interative_2D_Art)
+- [3D animation](https://github.com/Besutodesuka/OpenGL_learning_At_KMUTT/tree/main/work_collections/3D_animation_jellyfish)
