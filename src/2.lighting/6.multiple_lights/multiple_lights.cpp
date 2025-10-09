@@ -164,7 +164,7 @@ void generateJellyfishHead(std::vector<float>& vertices, std::vector<unsigned in
     indices.clear();
 
     // 3. Reserve memory to avoid reallocations
-    vertices.reserve((u_segments + 1) * (v_segments + 1) * 5); // 5 floats per vertex: X, Y, Z, U, V
+    vertices.reserve((u_segments + 1) * (v_segments + 1) * 8); // 8 floats per vertex: X, Y, Z, NX, NY, NZ, U, V
     indices.reserve(u_segments * v_segments * 6);              // 6 indices per quad (2 triangles)
 
     // 4. Define the parametric equations as C++ lambdas
@@ -180,7 +180,24 @@ void generateJellyfishHead(std::vector<float>& vertices, std::vector<unsigned in
         return cos(0.5f * PI * u);
         };
 
-    // 5. Generate the vertex positions and texture coordinates
+    // Helper function to calculate normal vector using partial derivatives
+    auto calculateNormal = [&](float u, float v) -> glm::vec3 {
+        float h = 0.001f; // Small step for numerical differentiation
+        
+        // Calculate partial derivatives numerically
+        glm::vec3 p_center(x_func(u, v), y_func(u, v), z_func(u, v));
+        glm::vec3 p_u(x_func(u + h, v), y_func(u + h, v), z_func(u + h, v));
+        glm::vec3 p_v(x_func(u, v + h), y_func(u, v + h), z_func(u, v + h));
+        
+        glm::vec3 du = p_u - p_center;
+        glm::vec3 dv = p_v - p_center;
+        
+        // Cross product gives the normal vector
+        glm::vec3 normal = glm::cross(du, dv);
+        return glm::normalize(normal);
+    };
+
+    // 5. Generate the vertex positions, normals, and texture coordinates
     for (int j = 0; j <= v_segments; ++j) {
         for (int i = 0; i <= u_segments; ++i) {
             // Normalize u and v to the range [0, 1]
@@ -191,6 +208,12 @@ void generateJellyfishHead(std::vector<float>& vertices, std::vector<unsigned in
             vertices.push_back(x_func(u_norm, v_norm));
             vertices.push_back(y_func(u_norm, v_norm));
             vertices.push_back(z_func(u_norm, v_norm));
+
+            // Calculate and add normal vector
+            glm::vec3 normal = calculateNormal(u_norm, v_norm);
+            vertices.push_back(normal.x);
+            vertices.push_back(normal.y);
+            vertices.push_back(normal.z);
 
             // Add texture coordinates directly from the normalized u and v
             vertices.push_back(u_norm);
@@ -232,7 +255,7 @@ void generateKnotTorus(std::vector<float>& vertices, std::vector<unsigned int>& 
     indices.clear();
 
     // 3. Reserve memory to avoid reallocations (good for performance)
-    vertices.reserve((u_segments + 1) * (v_segments + 1) * 5); // XYZ + UV
+    vertices.reserve((u_segments + 1) * (v_segments + 1) * 8); // XYZ + NXYZ + UV
     indices.reserve(u_segments * v_segments * 6);
 
     // 4. Define the parametric equations as C++ lambdas, broken down for clarity
@@ -278,7 +301,24 @@ void generateKnotTorus(std::vector<float>& vertices, std::vector<unsigned int>& 
         return inner_x * term_v2 + inner_y * term_v1;
         };
 
-    // 5. Generate the vertex positions and texture coordinates
+    // Helper function to calculate normal vector using partial derivatives
+    auto calculateNormal = [&](float u, float v) -> glm::vec3 {
+        float h = 0.001f; // Small step for numerical differentiation
+        
+        // Calculate partial derivatives numerically
+        glm::vec3 p_center(x_func(u, v), y_func(u, v), z_func(u, v));
+        glm::vec3 p_u(x_func(u + h, v), y_func(u + h, v), z_func(u + h, v));
+        glm::vec3 p_v(x_func(u, v + h), y_func(u, v + h), z_func(u, v + h));
+        
+        glm::vec3 du = p_u - p_center;
+        glm::vec3 dv = p_v - p_center;
+        
+        // Cross product gives the normal vector
+        glm::vec3 normal = glm::cross(du, dv);
+        return glm::normalize(normal);
+    };
+
+    // 5. Generate the vertex positions, normals, and texture coordinates
     for (int j = 0; j <= v_segments; ++j) {
         for (int i = 0; i <= u_segments; ++i) {
             float u_norm = static_cast<float>(i) / u_segments;
@@ -288,6 +328,12 @@ void generateKnotTorus(std::vector<float>& vertices, std::vector<unsigned int>& 
             vertices.push_back(x_func(u_norm, v_norm));
             vertices.push_back(y_func(u_norm, v_norm));
             vertices.push_back(z_func(u_norm, v_norm));
+
+            // Calculate and add normal vector
+            glm::vec3 normal = calculateNormal(u_norm, v_norm);
+            vertices.push_back(normal.x);
+            vertices.push_back(normal.y);
+            vertices.push_back(normal.z);
 
             // Add the texture coordinates (U, V)
             vertices.push_back(u_norm);
@@ -330,9 +376,9 @@ void generateAnimatedTail(
 
     // 3. Reserve memory to avoid reallocations (good for performance)
     vertices.reserve(
-        (circle_per_period * n_period + 1) * cross_section_resolution// circle vertices for the tail body 
+        (circle_per_period * n_period + 1) * cross_section_resolution * 8 // circle vertices for the tail body: XYZ + NXYZ + UV
         // + cross_section_resolution * (cross_section_resolution / 4 - 2) + 1 // 1 for tip, resolution/4 - 2(tip and base) layer for arch
-    ); // XYZ + UV
+    );
     //indices.reserve(u_segments * v_segments * 6);
 
     auto x_offset = [&](float angle, float time) {
@@ -348,18 +394,44 @@ void generateAnimatedTail(
         };
 
     float circle_y_offset = height / (circle_per_period * n_period); // the offset between each circle along the height 
+    
+    // Helper function to calculate normal for cylindrical geometry
+    auto calculateCylinderNormal = [&](float angle, float oscillate_angle, float time) -> glm::vec3 {
+        // For a cylinder, the normal points outward from the center axis
+        // The normal is perpendicular to the cylinder surface
+        float x_offset_val = x_offset(oscillate_angle, time);
+        float x_pos = x_position(radius, angle) + x_offset_val;
+        float z_pos = z_position(radius, angle);
+        
+        // Normalize the vector from center to surface point
+        glm::vec3 normal = glm::normalize(glm::vec3(x_pos - x_offset_val, 0.0f, z_pos));
+        return normal;
+    };
+    
     // iterate through each circle along the height
     for (unsigned int j = 0; j <= circle_per_period * n_period; ++j) {
         //for each cross section
         for (unsigned int i = 0; i < cross_section_resolution; ++i) {
             float u_norm = static_cast<float>(i) / cross_section_resolution;
             float v_norm = static_cast<float>(j) / (circle_per_period * n_period);
-            // Add the x, y, z components
+            
+            // Calculate position
             float oscillate_angle = 2 * PI * j / circle_per_period; // oscillation along the height
             float angle = 2 * PI * i / cross_section_resolution;
-            vertices.push_back(x_position(radius, angle) + x_offset(oscillate_angle, time));
-            vertices.push_back(-circle_y_offset * j); // going down along the y axis
-            vertices.push_back(z_position(radius, angle));
+            float x_pos = x_position(radius, angle) + x_offset(oscillate_angle, time);
+            float y_pos = -circle_y_offset * j; // going down along the y axis
+            float z_pos = z_position(radius, angle);
+            
+            // Add the x, y, z components
+            vertices.push_back(x_pos);
+            vertices.push_back(y_pos);
+            vertices.push_back(z_pos);
+
+            // Calculate and add normal vector
+            glm::vec3 normal = calculateCylinderNormal(angle, oscillate_angle, time);
+            vertices.push_back(normal.x);
+            vertices.push_back(normal.y);
+            vertices.push_back(normal.z);
 
             // Add the texture coordinates (U, V)
             vertices.push_back(u_norm);
@@ -444,7 +516,7 @@ float vertices[] = {// this is for a cube which can be transform to make it scat
 // positions all containers
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f,  0.0f,  0.0f),
-  /*  glm::vec3(2.0f,  5.0f, -15.0f),
+    glm::vec3(2.0f,  5.0f, -15.0f),
     glm::vec3(-1.5f, -2.2f, -2.5f),
     glm::vec3(-3.8f, -2.0f, -12.3f),
     glm::vec3(2.4f, -0.4f, -3.5f),
@@ -452,7 +524,7 @@ glm::vec3 cubePositions[] = {
     glm::vec3(1.3f, -2.0f, -2.5f),
     glm::vec3(1.5f,  2.0f, -2.5f),
     glm::vec3(1.5f,  0.2f, -1.5f),
-    glm::vec3(-1.3f,  1.0f, -1.5f)*/
+    glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 // positions of the point lights
 glm::vec3 pointLightPositions[] = {
@@ -465,6 +537,12 @@ glm::vec3 pointLightPositions[] = {
 std::vector<VertexAttribute> texturedParametricLayout = {
     {0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0},                   // location 0: position
     {2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))}  // location 2: texCoord
+};
+
+std::vector<VertexAttribute> texturedParametricWithNormalsLayout = {
+    {0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0},                   // location 0: position
+    {1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))}, // location 1: normals
+    {2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))}   // location 2: texCoord
 };
 
 std::vector<VertexAttribute> texture_n_ebo_Layout = {
@@ -542,17 +620,17 @@ int main()
     std::vector<float> JH_vertices;
     std::vector<unsigned int> JH_indices;
     generateJellyfishHead(JH_vertices, JH_indices);
-    Mesh jellyfishHeadMesh(JH_vertices, JH_indices, texturedParametricLayout);
+    Mesh jellyfishHeadMesh(JH_vertices, JH_indices, texturedParametricWithNormalsLayout);
 
     std::vector<float> JC_vertices;
     std::vector<unsigned int> JC_indices;
     generateKnotTorus(JC_vertices, JC_indices);
-    Mesh jellyfishCapMesh(JC_vertices, JC_indices, texturedParametricLayout);
+    Mesh jellyfishCapMesh(JC_vertices, JC_indices, texturedParametricWithNormalsLayout);
 
     std::vector<float> tail_vertices;
     std::vector<unsigned int> tail_indices;
     generateAnimatedTail(tail_vertices, tail_indices, 0);
-    Mesh animatedTailMesh(tail_vertices, tail_indices, texturedParametricLayout);
+    Mesh animatedTailMesh(tail_vertices, tail_indices, texturedParametricWithNormalsLayout);
 
     Jellyfish Jellyfish_facade(&jellyfishHeadMesh, &jellyfishCapMesh, &animatedTailMesh);
     /// sizeof(float)
