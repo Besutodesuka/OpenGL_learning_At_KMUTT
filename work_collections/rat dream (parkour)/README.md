@@ -3,7 +3,8 @@
 this game objective is to walk and jump and get to that cheeeeese
 
 # Demo
-https://github.com/Besutodesuka/OpenGL_learning_At_KMUTT/issues/1#issue-3594231964
+https://github.com/user-attachments/assets/d17c42e9-6abe-4ddb-9f73-5690b28872ed
+
 # method
 - map: loaded model -> rearrange its order -> draw easy box to represent collider box -> load collider model -> AABB collide box manual generation
 - camera + rat model = Player 
