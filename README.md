@@ -9,4 +9,5 @@ for easier compiling code, I use same project directory and cmak configuration a
 - [2D interactive art](https://github.com/Besutodesuka/OpenGL_learning_At_KMUTT/tree/main/work_collections/Interative_2D_Art)
 - [3D animation](https://github.com/Besutodesuka/OpenGL_learning_At_KMUTT/tree/main/work_collections/3D_animation_jellyfish)
 - [3D model loading & collision](https://github.com/Besutodesuka/OpenGL_learning_At_KMUTT/tree/main/work_collections/rat%20dream%20(parkour))
+- [3D animation state management](https://github.com/Besutodesuka/OpenGL_learning_At_KMUTT/tree/main/work_collections/3D_player_animation)
 
